@@ -22,14 +22,13 @@ class Pagination {
                     add pagination container to table container 
                 */
                 let paginationDOM = this.createPaginationElement();
-                let paginationItemsHTML = this.CPIForMaxFivePages(
-                    maxPages
-                );
+                let paginationItemsHTML = this.CPIForMaxFivePages(maxPages);
                 paginationDOM.paginationUl.innerHTML = paginationItemsHTML;
                 let paginationContainer = this.tableConatiner.querySelector(
                     ".table-container__pagination"
                 );
-                if (paginationContainer) this.tableConatiner.removeChild(paginationContainer);
+                if (paginationContainer)
+                    this.tableConatiner.removeChild(paginationContainer);
                 this.tableConatiner.appendChild(
                     paginationDOM.paginationContainer
                 );
@@ -68,7 +67,8 @@ class Pagination {
                 let paginationContainer = this.tableConatiner.querySelector(
                     ".table-container__pagination"
                 );
-                if (paginationContainer) this.tableConatiner.removeChild(paginationContainer);
+                if (paginationContainer)
+                    this.tableConatiner.removeChild(paginationContainer);
                 this.tableConatiner.appendChild(
                     paginationDOM.paginationContainer
                 );
@@ -83,10 +83,7 @@ class Pagination {
                 let paginationUl = this.tableConatiner.querySelector(
                     ".pagination__items"
                 );
-                let paginationItemsHTML = this.CPIForMaxPages(
-                    maxPages,
-                    page
-                );
+                let paginationItemsHTML = this.CPIForMaxPages(maxPages, page);
                 paginationUl.innerHTML = paginationItemsHTML;
             }
         }
@@ -148,9 +145,7 @@ class Pagination {
             // create placeholder button
             paginationItemsHTMLContainer += this.createPlaceholderBtn();
             // create maxPages button
-            paginationItemsHTMLContainer += this.createPaginationBtn(
-                maxPages
-            );
+            paginationItemsHTMLContainer += this.createPaginationBtn(maxPages);
         } else if (page > maxPages - 4) {
             // create first  item button
             paginationItemsHTMLContainer += this.createPaginationBtn(1);
@@ -183,9 +178,7 @@ class Pagination {
             // create placeholder button
             paginationItemsHTMLContainer += this.createPlaceholderBtn();
             // create last item page
-            paginationItemsHTMLContainer += this.createPaginationBtn(
-                maxPages
-            );
+            paginationItemsHTMLContainer += this.createPaginationBtn(maxPages);
         }
 
         //add next button
@@ -249,7 +242,6 @@ class DataTable {
         this.maxPages = Math.ceil(this.tableBodyItems.length / this.rowsLimit);
         // Handle the table and add aditonal things that exist in options object
         this.dataTableHandler();
-        console.log(this.data);
     }
 
     dataTableHandler() {
@@ -279,32 +271,44 @@ class DataTable {
 
         if (this.options.rowsNumberBox) {
             controlsItems++;
-            let rowsNumberBox = document.createElement("div");
-            rowsNumberBox.classList.add("table-controls__rows");
-            let rowNumbersLabel = document.createElement("label");
-            rowNumbersLabel.setAttribute("for", "numberOfRows");
-            rowNumbersLabel.textContent = "Rows: ";
-            let rowNumbersSelect = document.createElement("select");
-            rowNumbersSelect.id = "numberOfRows";
-            rowNumbersSelect.classList.add("form-control");
-            rowNumbersSelect.innerHTML = `
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-            `;
-            rowNumbersSelect.addEventListener(
-                "change",
-                this.addRowsNumber.bind(this)
-            );
-            rowsNumberBox.append(rowNumbersLabel, rowNumbersSelect);
-            tableControls.appendChild(rowsNumberBox);
+            tableControls.appendChild(this.createRowsNumberBox());
         }
         if (controlsItems)
             this.tableContainer.insertAdjacentElement(
                 "afterbegin",
                 tableControls
             );
+    }
+
+    createRowsNumberBox() {
+        let rowsNumberBox = document.createElement("div");
+        rowsNumberBox.classList.add("table-controls__rows");
+        let rowNumbersLabel = document.createElement("label");
+        rowNumbersLabel.setAttribute("for", "numberOfRows");
+        rowNumbersLabel.textContent = "Rows: ";
+        let rowNumbersSelect = document.createElement("select");
+        rowNumbersSelect.id = "numberOfRows";
+        rowNumbersSelect.classList.add("form-control");
+        rowNumbersSelect.innerHTML = `
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            `;
+        rowNumbersSelect.addEventListener(
+            "change",
+            this.addRowsNumber.bind(this)
+        );
+        rowsNumberBox.append(rowNumbersLabel, rowNumbersSelect);
+        return rowsNumberBox;
+    }
+
+    addRowsNumber(e) {
+        this.rowsLimit = +e.target.value;
+        this.maxPages = Math.ceil(
+            this.searchedData.length / this.rowsLimit
+        );
+        this.renderDataPage(null, this.maxPages);
     }
 
     createSearchBoxElement() {
@@ -338,10 +342,14 @@ class DataTable {
                 }
             }
             this.searchedData = result;
-            this.maxPages = Math.ceil(this.searchedData.length / this.rowsLimit);
+            this.maxPages = Math.ceil(
+                this.searchedData.length / this.rowsLimit
+            );
         } else {
             this.searchedData = this.tableBodyItems;
-            this.maxPages = Math.ceil(this.tableBodyItems.length / this.rowsLimit);
+            this.maxPages = Math.ceil(
+                this.tableBodyItems.length / this.rowsLimit
+            );
         }
         // call render
         this.renderDataPage(null);
@@ -357,7 +365,6 @@ class DataTable {
 
     parseData() {
         let tableBodyItems = this.tableBodyItems;
-        console.log(this.tableBodyItems);
         if (!this.tableHeaders) {
             this.tableHeaders = Array.from(
                 this.tableContainer.querySelectorAll("table thead tr th")
@@ -365,7 +372,6 @@ class DataTable {
                 return el.textContent;
             });
         }
-        console.log(this.tableHeaders);
         this.data = [];
         Array.from(tableBodyItems).forEach((el) => {
             let elChilds = el.children;
@@ -408,8 +414,6 @@ class DataTable {
             }
         }
     }
-
-    addRowsNumber() {}
 }
 let t1 = performance.now();
 let datatable = new DataTable({
