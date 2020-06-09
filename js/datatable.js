@@ -5,14 +5,13 @@
  */
 
 class Pagination {
-    constructor(maxPages, tableContainer, paginationHanlerFN) {
-        this.maxPages = maxPages;
+    constructor(tableContainer, paginationHanlerFN) {
         this.tableConatiner = tableContainer;
         this.paginationHandler = paginationHanlerFN;
     }
 
-    renderPagination(page) {
-        if (this.maxPages <= 5) {
+    renderPagination(page, maxPages) {
+        if (maxPages <= 5) {
             // if there isn't page (first time that render pagination) that will be call once
             if (!page) {
                 // FINISH
@@ -24,9 +23,13 @@ class Pagination {
                 */
                 let paginationDOM = this.createPaginationElement();
                 let paginationItemsHTML = this.CPIForMaxFivePages(
-                    this.maxPages
+                    maxPages
                 );
                 paginationDOM.paginationUl.innerHTML = paginationItemsHTML;
+                let paginationContainer = this.tableConatiner.querySelector(
+                    ".table-container__pagination"
+                );
+                if (paginationContainer) this.tableConatiner.removeChild(paginationContainer);
                 this.tableConatiner.appendChild(
                     paginationDOM.paginationContainer
                 );
@@ -43,7 +46,7 @@ class Pagination {
                     ".pagination__items"
                 );
                 let paginationItemsHTML = this.CPIForMaxFivePages(
-                    this.maxPages,
+                    maxPages,
                     page
                 );
                 paginationUl.innerHTML = paginationItemsHTML;
@@ -60,8 +63,12 @@ class Pagination {
                  * add pagination container to table container
                  */
                 let paginationDOM = this.createPaginationElement();
-                let paginationItemsHTML = this.CPIForMaxPages(this.maxPages);
+                let paginationItemsHTML = this.CPIForMaxPages(maxPages);
                 paginationDOM.paginationUl.innerHTML = paginationItemsHTML;
+                let paginationContainer = this.tableConatiner.querySelector(
+                    ".table-container__pagination"
+                );
+                if (paginationContainer) this.tableConatiner.removeChild(paginationContainer);
                 this.tableConatiner.appendChild(
                     paginationDOM.paginationContainer
                 );
@@ -77,7 +84,7 @@ class Pagination {
                     ".pagination__items"
                 );
                 let paginationItemsHTML = this.CPIForMaxPages(
-                    this.maxPages,
+                    maxPages,
                     page
                 );
                 paginationUl.innerHTML = paginationItemsHTML;
@@ -142,15 +149,15 @@ class Pagination {
             paginationItemsHTMLContainer += this.createPlaceholderBtn();
             // create maxPages button
             paginationItemsHTMLContainer += this.createPaginationBtn(
-                this.maxPages
+                maxPages
             );
-        } else if (page > this.maxPages - 4) {
+        } else if (page > maxPages - 4) {
             // create first  item button
             paginationItemsHTMLContainer += this.createPaginationBtn(1);
             // create placeholder item  button
             paginationItemsHTMLContainer += this.createPlaceholderBtn();
             // create items last 5 buttons
-            for (let i = this.maxPages - 4; i <= this.maxPages; i++) {
+            for (let i = maxPages - 4; i <= maxPages; i++) {
                 if (i == page)
                     paginationItemsHTMLContainer += this.createPaginationBtn(
                         i,
@@ -177,7 +184,7 @@ class Pagination {
             paginationItemsHTMLContainer += this.createPlaceholderBtn();
             // create last item page
             paginationItemsHTMLContainer += this.createPaginationBtn(
-                this.maxPages
+                maxPages
             );
         }
 
@@ -230,62 +237,6 @@ class Pagination {
     }
 }
 
-class searchBox {
-    /**
-     *
-     * create search box
-     * add eventlistener to the search box
-     * make a function that search in the data in table
-     * take the searched data and add it to the table through function in table class
-     */
-    constructor(tableData) {
-        this.tableData = tableData;
-    }
-
-    createSearchBoxElement() {
-        let searchBox = document.createElement("div");
-        searchBox.classList.add("table-controls__search");
-        let searchBoxLable = document.createElement("lable");
-        searchBoxLable.setAttribute("for", "searchInTable");
-        searchBoxLable.textContent = "Search: ";
-        let searchBoxInput = document.createElement("input");
-        searchBoxInput.type = "text";
-        searchBoxInput.id = "searchInTable";
-        searchBoxInput.classList.add("form-control");
-        searchBoxInput.addEventListener("keyup", this.searchHandler.bind(this));
-        searchBox.append(searchBoxLable, searchBoxInput);
-        return searchBox;
-    }
-
-    searchHandler(e) {
-        let value = e.target.value;
-        if (value !== "") {
-            let result = [];
-            // loop through the data
-            for (let i = 0; i < this.tableData.length; i++) {
-                // every item in the array will converted to string by stringify
-                let stringified = JSON.stringify(this.tableData[i]);
-                // search in that string if the value in there
-                // if the value exist 
-                if (stringified.includes(value)) {
-                    // make a tr and add it to result
-                    result.push(this.createTableData(this.tableData[i]));
-                };
-            }
-            console.log(result);
-            // call render 
-        }
-    }
-
-    createTableData(data) {
-        let tableTR = document.createElement('tr');
-        for (const td in data) {
-            tableTR.innerHTML += `<td>${data[td]}</td>`;
-        }
-        return tableTR
-    }
-}
-
 class DataTable {
     constructor(options) {
         // options object conatins (table, searchBox, rowsNumberBox, pagination)
@@ -294,6 +245,7 @@ class DataTable {
         this.rowsLimit = this.options.rowsLimit || 10;
         this.tableBody = this.tableContainer.querySelector("table tbody");
         this.tableBodyItems = Array.from(this.tableBody.children);
+        this.searchedData = this.tableBodyItems;
         this.maxPages = Math.ceil(this.tableBodyItems.length / this.rowsLimit);
         // Handle the table and add aditonal things that exist in options object
         this.dataTableHandler();
@@ -308,7 +260,6 @@ class DataTable {
         // generate pagination if exist
         if (this.options.pagination) {
             this.pagination = new Pagination(
-                this.maxPages,
                 this.tableContainer,
                 this.paginationHandler.bind(this)
             );
@@ -321,8 +272,7 @@ class DataTable {
         tableControls.classList.add("table-controls");
         let controlsItems = 0;
         if (this.options.searchBox) {
-            this.searchBox = new searchBox(this.data);
-            let searchBoxHTML = this.searchBox.createSearchBoxElement();
+            let searchBoxHTML = this.createSearchBoxElement();
             tableControls.appendChild(searchBoxHTML);
             controlsItems++;
         }
@@ -357,6 +307,54 @@ class DataTable {
             );
     }
 
+    createSearchBoxElement() {
+        let searchBox = document.createElement("div");
+        searchBox.classList.add("table-controls__search");
+        let searchBoxLable = document.createElement("lable");
+        searchBoxLable.setAttribute("for", "searchInTable");
+        searchBoxLable.textContent = "Search: ";
+        let searchBoxInput = document.createElement("input");
+        searchBoxInput.type = "text";
+        searchBoxInput.id = "searchInTable";
+        searchBoxInput.classList.add("form-control");
+        searchBoxInput.addEventListener("keyup", this.searchHandler.bind(this));
+        searchBox.append(searchBoxLable, searchBoxInput);
+        return searchBox;
+    }
+
+    searchHandler(e) {
+        let value = e.target.value;
+        let result = [];
+        if (value !== "") {
+            // loop through the data
+            for (let i = 0; i < this.data.length; i++) {
+                // every item in the array will converted to string by stringify
+                let stringified = JSON.stringify(this.data[i]);
+                // search in that string if the value in there
+                // if the value exist
+                if (stringified.includes(value)) {
+                    // make a tr and add it to result
+                    result.push(this.createTableData(this.data[i]));
+                }
+            }
+            this.searchedData = result;
+            this.maxPages = Math.ceil(this.searchedData.length / this.rowsLimit);
+        } else {
+            this.searchedData = this.tableBodyItems;
+            this.maxPages = Math.ceil(this.tableBodyItems.length / this.rowsLimit);
+        }
+        // call render
+        this.renderDataPage(null);
+    }
+
+    createTableData(data) {
+        let tableTR = document.createElement("tr");
+        for (const td in data) {
+            tableTR.innerHTML += `<td>${data[td]}</td>`;
+        }
+        return tableTR;
+    }
+
     parseData() {
         let tableBodyItems = this.tableBodyItems;
         console.log(this.tableBodyItems);
@@ -389,13 +387,13 @@ class DataTable {
             start = (+page - 1) * this.rowsLimit;
             end = +page * this.rowsLimit;
         }
-        let data = Array.from(this.tableBodyItems).slice(start, end);
+        let data = Array.from(this.searchedData).slice(start, end);
         let dataInPage = ``;
         data.forEach((el) => {
             dataInPage += `${el.outerHTML}`;
         });
         this.tableBody.innerHTML = dataInPage;
-        this.pagination.renderPagination(page);
+        this.pagination.renderPagination(page, this.maxPages);
     }
 
     paginationHandler(e) {
